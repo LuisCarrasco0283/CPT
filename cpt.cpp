@@ -131,7 +131,7 @@ std::vector<char> Arreglo(const std::string filename)
 }
 
 // Función 
-void DataSave(const std::vector<double> &Indices, const std::string UserName) 
+void DataSave(const std::vector<double> &Indices, const std::string UserName)
 {
 	// Se crea una carpeta para el usuario
 	if (_mkdir(("C:\\TESIS\\DOCUMENTACIÓN\\CPT_FILES\\OUTPUTS\\" + UserName).c_str()) == -1)
@@ -173,6 +173,32 @@ void DataSave(const std::vector<double> &Indices, const std::string UserName)
 		std::cerr << "No se pudo abrir el archivo";
 	}
 
+}
+
+// Salvar Tiempos
+void TimeSave(const std::vector<std::vector<long long>>& Tiempos, const std::string& UserName)
+{
+	// Abre el archivo en modo de escritura
+	std::ofstream file("C:\\TESIS\\DOCUMENTACIÓN\\CPT_FILES\\OUTPUTS\\Tiempos_" + UserName + ".txt");
+
+	// Verifica si el archivo se abrió correctamente
+	if (!file)
+	{
+		std::cerr << "No se pudo abrir el archivo";
+		return;
+	}
+
+	// Escribe cada tiempo en el archivo
+	for (const auto& subvector : Tiempos)
+	{
+		for (const auto& tiempo : subvector)
+		{
+			file << tiempo << "\n";
+		}
+	}
+
+	// Cierra el archivo
+	file.close();
 }
 
 // Ciclo principal
@@ -256,12 +282,11 @@ int main()
 			Tiempos.push_back({ 0LL });						// El elemento i del vector será 0
 		}
 
-		std::cout << Respuestas(0, i) << std::endl;
-	
-		std::cout << Tiempos[i][0] << std::endl;
-		std::cout << ms_int.count() << std::endl;
 		auto tend = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
 	}
+
+	// Salvar el vector de tiempos
+	TimeSave(Tiempos, UserName);
 
 	// Calcular el porcenta de los errores de omisión
 	OmiError = (Respuestas.array() == 0).count();
