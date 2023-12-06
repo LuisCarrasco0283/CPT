@@ -14,19 +14,22 @@
 
 
 // Inclusión de librerías
-#include<opencv2/core/core.hpp>;
-#include<opencv2/highgui/highgui.hpp>;
-#include<opencv2/imgproc.hpp>;
-#include<Eigen/Dense>;
-#include<iostream>;
-#include<chrono>;
-#include<fstream>;
-#include<sstream>
-#include<vector>
-#include<thread>;
-#include<numeric>;
+#include <opencv2/core/core.hpp>;
+#include <opencv2/highgui/highgui.hpp>;
+#include <opencv2/imgproc.hpp>;
+#include <Eigen/Dense>;
+#include <iostream>;
+#include <chrono>;
+#include <fstream>;
+#include <sstream>
+#include <vector>
+#include <thread>;
+#include <numeric>;
 #include <cmath>;
 #include <algorithm>;
+
+// Declaración del nombre del usuario
+std::string UserName;
 
 // Declaración de variables para los índices medibles
 float OmiError;									// Variable flotante para el error de omisión
@@ -77,9 +80,15 @@ Eigen::MatrixXd Data_Load(const std::string filename)
 
 	// Ciclo para convertir el vector de valores en un objeto matriz de la clase Eigen
 	Eigen::MatrixXd matriz(filas, columnas);			// Declaración de la matriz con tramaños de filas y columnas contadas
-	for (int i = 0; i < filas; ++i)						// Para cada fila de 1 hasta n
-		for (int j = 0; j < columnas; ++j)				// Para cada columna de 1 hasta m
+
+	for (Eigen::Index i = 0; i < filas; ++i)			// Para cada fila de 1 hasta n
+	{
+		for (Eigen::Index j = 0; j < columnas; ++j)		// Para cada columna de 1 hasta m
+		{
+
 			matriz(i, j) = valores[i * columnas + j];	// Asigna el correspondiente valor al elemento (row,col) de la matriz
+		}
+	}
 
 	// Regresa la matriz constriuda como salida de la función Data_Load
 	return matriz;
@@ -128,10 +137,13 @@ double sign(double x)
 // Ciclo principal
 int main()
 {
+	// Datos 
+	UserName = "Prueba01";				// Definición del nombre de usuario
+	Trials = 4;							// Definición del número de letras en la secuencia [máx = 200]
+	
 	// Carga del vector de resultados esperados
     Resultados = Data_Load("C:/Users/Luis Carrasco/Documents/BCI/Resultados.txt");
-	Trials = 4;
-
+	
 	// Asignar el tamaño de la matriz de resultados a la matriz de respuestas
 	Eigen::MatrixXd Respuestas(Resultados.rows(),Resultados.cols());
 
@@ -143,8 +155,8 @@ int main()
 	const cv::String Ventana("Ventana");				// Variable string que contenga la palabra "Ventana"
 
 	// Configuración de la venta del CPT
-	cv::namedWindow(Ventana, cv::WND_PROP_FULLSCREEN);											// Nombrar a la ventana 
-	cv::setWindowProperty(Ventana, cv::WND_PROP_FULLSCREEN, cv::WindowFlags::WINDOW_FULLSCREEN);// Configurar la venta en panatalla completa
+	cv::namedWindow(Ventana, cv::WND_PROP_FULLSCREEN);												// Nombrar a la ventana 
+	cv::setWindowProperty(Ventana, cv::WND_PROP_FULLSCREEN, cv::WindowFlags::WINDOW_FULLSCREEN);	// Configurar la venta en panatalla completa
 
 	// Ciclo para mostrar las letras en la ventana
 	for (int i = 0; i < Trials; i++)			// Para cada letra en la cadena de secuencia
@@ -232,17 +244,6 @@ int main()
 	std::cout << "Errores totales: " << TotalError << std::endl;
 	std::cout << "Respuestas correctas: " << CorrectResponses<< std::endl;
 	std::cout << "Errores por comisión: " << ComiError << std::endl;
-
-
-
-
-
-
-
-
-
-
-
 
 	// Retorno 
 	return 0;
