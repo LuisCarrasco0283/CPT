@@ -14,28 +14,29 @@
 
 
 // Inclusión de librerías
-#include <opencv2/core/core.hpp>;
-#include <opencv2/highgui/highgui.hpp>;
-#include <opencv2/imgproc.hpp>;
-#include <Eigen/Dense>;
-#include <iostream>;
-#include <chrono>;
-#include <fstream>;
-#include <sstream>
-#include <vector>
-#include <thread>;
-#include <numeric>;
-#include <cmath>;
-#include <algorithm>;
+#include<opencv2/core/core.hpp>;
+#include<opencv2/highgui/highgui.hpp>;
+#include<opencv2/imgproc.hpp>;
+#include<Eigen/Dense>;
+#include<iostream>;
+#include<chrono>;
+#include<fstream>;
+#include<sstream>
+#include<vector>
+#include<thread>;
+#include<numeric>;
+#include<cmath>;
+#include<algorithm>;
+#include <direct.h>
 
 // Declaración del nombre del usuario
 std::string UserName;
 
 // Declaración de variables para los índices medibles
-float OmiError;									// Variable flotante para el error de omisión
-float ComiError;								// Variable flotante para el error de comisión
-float MeanTime;									// Variable flotante para el tiempo promedio de respuesta
-float StdDev;									// Variable flotante para la desviación estándar del tiempo
+double OmiError;									// Variable flotante para el error de omisión
+double ComiError;								// Variable flotante para el error de comisión
+double MeanTime;									// Variable flotante para el tiempo promedio de respuesta
+double StdDev;									// Variable flotante para la desviación estándar del tiempo
 int Trials;										// Total de eventos por suceder
 double TotalTime;								// Tiempo total de las respuestas correctas
 
@@ -47,6 +48,7 @@ std::vector<char> Secuencia;					// Vector fila que almacena la secuencia de car
 // Devlaración de variables para las ventanas
 cv::Mat Fondo;										// Variable del tipo matriz usada de background
 cv::Mat CPT;										// Variable del tipo matriz usada para imprimir las letras
+cv::Mat Wait;
 
 // Lectura de los archivos .TXT [int]
 Eigen::MatrixXd Data_Load(const std::string filename)
@@ -128,10 +130,49 @@ std::vector<char> Arreglo(const std::string filename)
 	return valores;
 }
 
-// Función signo
-double sign(double x) 
+// Función 
+void DataSave(const std::vector<double> &Indices, const std::string UserName) 
 {
-	return 1.0 / (1.0 + std::exp(-x));
+	// Se crea una carpeta para el usuario
+	if (_mkdir(("C:\\TESIS\\DOCUMENTACIÓN\\CPT_FILES\\OUTPUTS\\" + UserName).c_str()) == -1)
+	{
+		std::cerr << "Error al crear la carpeta  " << std::endl;
+	}
+	else
+	{
+		std::cout << "Directorio creado";
+	}
+	
+	// Crear el archivo con la data
+	std::ofstream file(("C:\\TESIS\\DOCUMENTACIÓN\\CPT_FILES\\OUTPUTS\\" + UserName + "\\" + UserName + ".txt").c_str());
+
+	if (file.is_open())
+	{
+		// Agregar elementos al archivo txt
+		file << "Total de intentos:\n";
+		file << Indices[0];
+		file << "\nIntentos correctos: \n";
+		file << Indices[1];
+		file << "\nErrores totales: \n";
+		file << Indices[2];
+		file << "\nErrorespor comisión: \n";
+		file << Indices[3];
+		file << "\nErrores por omisión: \n";
+		file << Indices[4];
+		file << "\nTiempo total de respuestas correctas: \n";
+		file << Indices[5];
+		file << "\nMedia del tiempo de respuesta: \n";
+		file << Indices[6];
+		file << "\nDesviación estándar del tiempo de respuesta: \n";
+		file << Indices[7];
+		file.close();
+		std::cout << "Archivo creado";
+	}
+	else
+	{
+		std::cerr << "No se pudo abrir el archivo";
+	}
+
 }
 
 // Ciclo principal
@@ -142,13 +183,13 @@ int main()
 	Trials = 4;							// Definición del número de letras en la secuencia [máx = 200]
 	
 	// Carga del vector de resultados esperados
-    Resultados = Data_Load("C:/Users/Luis Carrasco/Documents/BCI/Resultados.txt");
+    Resultados = Data_Load("C:/TESIS/DOCUMENTACIÓN/CPT_FILES/INPUT/Resultados.txt");
 	
 	// Asignar el tamaño de la matriz de resultados a la matriz de respuestas
 	Eigen::MatrixXd Respuestas(Resultados.rows(),Resultados.cols());
 
 	// Carga del vector de la secuencia CPT-AX
-	Secuencia = Arreglo("C:/Users/Luis Carrasco/Documents/BCI/Secuencia_AX.txt");
+	Secuencia = Arreglo("C:/TESIS/DOCUMENTACIÓN/CPT_FILES/INPUT/Secuencia_AX.txt");
 
 	// Asignación de valores a las variables de la ventana
 	Fondo = cv::Mat::zeros(1536, 864, CV_8U);			// Asignar una matriz de ceros para tener un fondo de color negro
@@ -157,6 +198,22 @@ int main()
 	// Configuración de la venta del CPT
 	cv::namedWindow(Ventana, cv::WND_PROP_FULLSCREEN);												// Nombrar a la ventana 
 	cv::setWindowProperty(Ventana, cv::WND_PROP_FULLSCREEN, cv::WindowFlags::WINDOW_FULLSCREEN);	// Configurar la venta en panatalla completa
+
+	// Ciclo de espera
+	for (int i = 5; i > 0; i--)
+	{
+		// Clonar los valores del fondo en la matriz CPT 
+		Wait = cv::Mat::zeros(1536, 864, CV_8U);
+		// Convertir un int a string
+		std::string Numero = std::to_string(i);
+		// Escribir texto sobre la matriz "CPT" [ventana,string,posición,fuente,grosor,escala,tamaño,tipo de línea,no invertir]
+		putText(Wait, Numero, cv::Point(300, 800), cv::FONT_HERSHEY_SIMPLEX, 10, cv::Scalar(255, 255, 255), 30, 8, false);
+		// Mostrar en la ventana el fondo de "CPT" con el texto asignado
+		imshow(Ventana, Wait);
+		cv::waitKey(1000);
+	}
+	// Tiempro entre secuencias
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 	// Ciclo para mostrar las letras en la ventana
 	for (int i = 0; i < Trials; i++)			// Para cada letra en la cadena de secuencia
@@ -199,19 +256,15 @@ int main()
 			Tiempos.push_back({ 0LL });						// El elemento i del vector será 0
 		}
 
-
-
 		std::cout << Respuestas(0, i) << std::endl;
 	
 		std::cout << Tiempos[i][0] << std::endl;
 		std::cout << ms_int.count() << std::endl;
 		auto tend = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
-		std::cout << "time:" << tend.count() << std::endl;
 	}
 
 	// Calcular el porcenta de los errores de omisión
 	OmiError = (Respuestas.array() == 0).count();
-	std::cout << "Errores por Omisión: " << OmiError << std::endl;
 
 	// Calcular los errores por comisión
 	ComiError = 0;
@@ -223,27 +276,52 @@ int main()
 		}
 	}
 
-	TotalTime = 0;
-	double SqrSum = 0;
-	for (const auto& subvector : Tiempos) 
+	// Estadística del tiempo
+	long long TotalTime = 0;
+	long long SqrSum = 0;
+	size_t numElements = 0;
+
+	for (const auto& subvector : Tiempos)
 	{
 		TotalTime += std::accumulate(subvector.begin(), subvector.end(), 0LL);
 		SqrSum += std::inner_product(subvector.begin(), subvector.end(), subvector.begin(), 0LL);
+		numElements += subvector.size();
 	}
+
+	double MeanTime = static_cast<double>(TotalTime) / numElements; // Calcula la media
+	double variance = static_cast<double>(SqrSum) / numElements - MeanTime * MeanTime; // Calcula la varianza
+
+	if (variance < 0) // Asegura que la varianza no sea negativa debido a errores de precisión de punto flotante
+	{
+		variance = 0;
+	}
+
+	double StdDev = std::sqrt(variance); // Calcula la desviación estándar
+
+	// Variables para análisis
+	double TotalError = OmiError + ComiError;
+
+	double CorrectResponses = Trials - TotalError;
 
 	// La media del tiempo de respuesta correcto
 	MeanTime = TotalTime / (Tiempos.size() - (OmiError + ComiError));
 
 	// La desviación estándar de los tiempos de rspuesta
-	StdDev = std::sqrt(SqrSum / (Tiempos.size() - (OmiError + ComiError)) - MeanTime * MeanTime);
+	StdDev = std::sqrt(SqrSum / (CorrectResponses) - MeanTime * MeanTime);
 
-	std::cout << "Tiempo correcto: " << StdDev << std::endl;
-	// Not necessary yet
-	int TotalError = OmiError + ComiError;
-	int CorrectResponses = Trials - TotalError;
-	std::cout << "Errores totales: " << TotalError << std::endl;
-	std::cout << "Respuestas correctas: " << CorrectResponses<< std::endl;
-	std::cout << "Errores por comisión: " << ComiError << std::endl;
+	// Almacenamiento de la data
+	std::vector<double> Indices;
+	Indices.push_back(Trials);
+	Indices.push_back(CorrectResponses);
+	Indices.push_back(TotalError);
+	Indices.push_back(ComiError);
+	Indices.push_back(OmiError);
+	Indices.push_back(TotalTime);
+	Indices.push_back(MeanTime);
+	Indices.push_back(StdDev);
+
+	// Salvar la data
+	DataSave(Indices, UserName);
 
 	// Retorno 
 	return 0;
